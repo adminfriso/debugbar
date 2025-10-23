@@ -25,8 +25,15 @@ module Debugbar
         RequestBuffer.push(Debugbar::Current.pop_request!)
 
         # TODO: Refactor since not having ActionCable might be more common than I thought
-        if defined?(ActionCable)
-          ActionCable.server.broadcast("debugbar_channel", RequestBuffer.to_h)
+        payload = RequestBuffer.to_h
+      
+        # Validate JSON-encodability before broadcast; skip if it would crash
+        begin
+          ActiveSupport::JSON.encode(payload)   # will raise on invalid UTF-8
+          ActionCable.server.broadcast("debugbar_channel", payload)
+        rescue JSON::GeneratorError
+          # Non-text/binary snuck into the payload (e.g. .xkt). Skip live update.
+          # (Everything else — header, request logging, X-Debugbar-Url — still works.)
         end
       end
 
