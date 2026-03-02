@@ -13,3 +13,4 @@ public/debugbar.js
 
 package-lock.json
 Gemfile.lock
+.DS_Store
